@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>Top Down Size Splay</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-10-13 13:37:44 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">Top Down Size Splay</h1>
+
+
+<pre class="src src-c++"><span style="color: #8c8c8c;">/*</span><span style="color: #8c8c8c;">
+  The chief modification here is that the splay operation works even if the
+  item being splayed is not in the tree, and even if the tree root of the
+  tree is NULL.  So the line:
+
+                              t = splay(i, t);
+
+  causes it to search for item with key i in the tree rooted at t.  If it's
+  there, it is splayed to the root.  If it isn't there, then the node put
+  at the root is the last one before NULL that would have been reached in a
+  normal binary search for i.  (It's a neighbor of i in the tree.)  This
+  allows many other operations to be easily implemented, as shown below.
+*/</span>
+
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;stdio.h&gt;</span>
+
+<span style="color: #00008b;">typedef</span> <span style="color: #00008b;">struct</span> <span style="color: #36648b;">tree_node</span> <span style="color: #36648b;">Tree</span>;
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">tree_node</span> {
+  <span style="color: #36648b;">Tree</span> * <span style="color: #b8860b;">left</span>, * <span style="color: #b8860b;">right</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">size</span>;   <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">maintained to be the number of nodes rooted here */</span>
+};
+
+<span style="color: #0000cd;">#define</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">compare</span>(<span style="color: #b8860b;">i</span>,<span style="color: #b8860b;">j</span>) ((i)-(j))
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">This is the comparison.                                       */</span>
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Returns &lt;0 if i&lt;j, =0 if i=j, and &gt;0 if i&gt;j                   */</span>
+
+<span style="color: #0000cd;">#define</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">node_size</span>(<span style="color: #b8860b;">x</span>) (((x)==<span style="color: #6b8e23;">NULL</span>) ? 0 : ((x)-&gt;size))
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">This macro returns the size of a node.  Unlike "x-&gt;size",     */</span>
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">it works even if x=NULL.  The test could be avoided by using  */</span>
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">a special version of NULL which was a real node with size 0.  */</span>
+
+<span style="color: #36648b;">Tree</span> * <span style="color: #6a5acd; font-weight: bold; font-style: italic;">splay</span> (<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>, <span style="color: #36648b;">Tree</span> *<span style="color: #b8860b;">t</span>) 
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Splay using the key i (which may or may not be in the tree.) */</span>
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">The starting root is t, and the tree used is defined by rat  */</span>
+<span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">size fields are maintained */</span>
+{
+  <span style="color: #36648b;">Tree</span> <span style="color: #b8860b;">N</span>, *<span style="color: #b8860b;">l</span>, *<span style="color: #b8860b;">r</span>, *<span style="color: #b8860b;">y</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">comp</span>, <span style="color: #b8860b;">root_size</span>, <span style="color: #b8860b;">l_size</span>, <span style="color: #b8860b;">r_size</span>;
+  
+  <span style="color: #00008b;">if</span> (t == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">return</span> t;
+  N.left = N.right = <span style="color: #6b8e23;">NULL</span>;
+  l = r = &amp;N;
+  root_size = node_size(t);
+  l_size = r_size = 0;
+  
+  <span style="color: #00008b;">for</span> (;;) {
+    comp = compare(i, t-&gt;key);
+    <span style="color: #00008b;">if</span> (comp &lt; 0) {
+      <span style="color: #00008b;">if</span> (t-&gt;left == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">break</span>;
+      <span style="color: #00008b;">if</span> (compare(i, t-&gt;left-&gt;key) &lt; 0) {
+        y = t-&gt;left;                           <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">rotate right */</span>
+        t-&gt;left = y-&gt;right;
+        y-&gt;right = t;
+        t-&gt;size = node_size(t-&gt;left) + node_size(t-&gt;right) + 1;
+        t = y;
+        <span style="color: #00008b;">if</span> (t-&gt;left == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">break</span>;
+      }
+      r-&gt;left = t;                               <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">link right */</span>
+      r = t;
+      t = t-&gt;left;
+      r_size += 1+node_size(r-&gt;right);
+    } <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span> (comp &gt; 0) {
+      <span style="color: #00008b;">if</span> (t-&gt;right == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">break</span>;
+      <span style="color: #00008b;">if</span> (compare(i, t-&gt;right-&gt;key) &gt; 0) {
+        y = t-&gt;right;                          <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">rotate left */</span>
+        t-&gt;right = y-&gt;left;
+        y-&gt;left = t;
+        t-&gt;size = node_size(t-&gt;left) + node_size(t-&gt;right) + 1;
+        t = y;
+        <span style="color: #00008b;">if</span> (t-&gt;right == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">break</span>;
+      }
+      l-&gt;right = t;                              <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">link left */</span>
+      l = t;
+      t = t-&gt;right;
+      l_size += 1+node_size(l-&gt;left);
+    } <span style="color: #00008b;">else</span> {
+      <span style="color: #00008b;">break</span>;
+    }
+  }
+  l_size += node_size(t-&gt;left);  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Now l_size and r_size are the sizes of */</span>
+  r_size += node_size(t-&gt;right); <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">the left and right trees we just built.*/</span>
+  t-&gt;size = l_size + r_size + 1;
+  
+  l-&gt;right = r-&gt;left = <span style="color: #6b8e23;">NULL</span>;
+  
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">The following two loops correct the size fields of the right path  */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">from the left child of the root and the right path from the left   */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">child of the root.                                                 */</span>
+  <span style="color: #00008b;">for</span> (y = N.right; y != <span style="color: #6b8e23;">NULL</span>; y = y-&gt;right) {
+    y-&gt;size = l_size;
+    l_size -= 1+node_size(y-&gt;left);
+  }
+  <span style="color: #00008b;">for</span> (y = N.left; y != <span style="color: #6b8e23;">NULL</span>; y = y-&gt;left) {
+    y-&gt;size = r_size;
+    r_size -= 1+node_size(y-&gt;right);
+  }
+  
+  l-&gt;right = t-&gt;left;                                <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">assemble */</span>
+  r-&gt;left = t-&gt;right;
+  t-&gt;left = N.right;
+  t-&gt;right = N.left;
+  
+  <span style="color: #00008b;">return</span> t;
+}
+
+<span style="color: #36648b;">Tree</span> * <span style="color: #6a5acd; font-weight: bold; font-style: italic;">insert</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>, <span style="color: #36648b;">Tree</span> * <span style="color: #b8860b;">t</span>) {
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Insert key i into the tree t, if it is not already there. */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Return a pointer to the resulting tree.                   */</span>
+  Tree * <span style="color: #00008b;">new</span>;
+  
+  <span style="color: #00008b;">if</span> (t != <span style="color: #6b8e23;">NULL</span>) {
+    t = splay(i,t);
+    <span style="color: #00008b;">if</span> (compare(i, t-&gt;key)==0) {
+      <span style="color: #00008b;">return</span> t;  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">it's already there */</span>
+    }
+  }
+  <span style="color: #00008b;">new</span> = (<span style="color: #36648b;">Tree</span> *) malloc (<span style="color: #00008b;">sizeof</span> (Tree));
+  <span style="color: #00008b;">if</span> (<span style="color: #00008b;">new</span> == <span style="color: #6b8e23;">NULL</span>) {printf(<span style="color: #8b0000;">"Ran out of space\n"</span>); exit(1);}
+  <span style="color: #00008b;">if</span> (t == <span style="color: #6b8e23;">NULL</span>) {
+    <span style="color: #00008b;">new</span>-&gt;left = <span style="color: #00008b;">new</span>-&gt;right = <span style="color: #6b8e23;">NULL</span>;
+  } <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span> (compare(i, t-&gt;key) &lt; 0) {
+    <span style="color: #00008b;">new</span>-&gt;left = t-&gt;left;
+    <span style="color: #00008b;">new</span>-&gt;right = t;
+    t-&gt;left = <span style="color: #6b8e23;">NULL</span>;
+    t-&gt;size = 1+node_size(t-&gt;right);
+  } <span style="color: #00008b;">else</span> {
+    <span style="color: #00008b;">new</span>-&gt;right = t-&gt;right;
+    <span style="color: #00008b;">new</span>-&gt;left = t;
+    t-&gt;right = <span style="color: #6b8e23;">NULL</span>;
+    t-&gt;size = 1+node_size(t-&gt;left);
+  }
+  <span style="color: #00008b;">new</span>-&gt;key = i;
+  <span style="color: #00008b;">new</span>-&gt;size = 1 + node_size(<span style="color: #00008b;">new</span>-&gt;left) + node_size(<span style="color: #00008b;">new</span>-&gt;right);
+  <span style="color: #00008b;">return</span> <span style="color: #00008b;">new</span>;
+}
+
+Tree * <span style="color: #00008b;">delete</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>, Tree *t) {
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Deletes i from the tree if it's there.               */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Return a pointer to the resulting tree.              */</span>
+  <span style="color: #36648b;">Tree</span> * <span style="color: #b8860b;">x</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">tsize</span>;
+  
+  <span style="color: #00008b;">if</span> (t==<span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">NULL</span>;
+  tsize = t-&gt;size;
+  t = splay(i,t);
+  <span style="color: #00008b;">if</span> (compare(i, t-&gt;key) == 0) {               <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">found it */</span>
+    <span style="color: #00008b;">if</span> (t-&gt;left == <span style="color: #6b8e23;">NULL</span>) {
+      x = t-&gt;right;
+    } <span style="color: #00008b;">else</span> {
+      x = splay(i, t-&gt;left);
+      x-&gt;right = t-&gt;right;
+    }
+    free(t);
+    <span style="color: #00008b;">if</span> (x != <span style="color: #6b8e23;">NULL</span>) {
+      x-&gt;size = tsize-1;
+    }
+    <span style="color: #00008b;">return</span> x;
+  } <span style="color: #00008b;">else</span> {
+    <span style="color: #00008b;">return</span> t;                         <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">It wasn't there */</span>
+  }
+}
+
+<span style="color: #36648b;">Tree</span> *<span style="color: #6a5acd; font-weight: bold; font-style: italic;">find_rank</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">r</span>, <span style="color: #36648b;">Tree</span> *<span style="color: #b8860b;">t</span>) {
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Returns a pointer to the node in the tree with the given rank.  */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Returns NULL if there is no such node.                          */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">Does not change the tree.  To guarantee logarithmic behavior,   */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">the node found here should be splayed to the root.              */</span>
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">lsize</span>;
+  <span style="color: #00008b;">if</span> ((r &lt; 0) || (r &gt;= node_size(t))) <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">NULL</span>;
+  <span style="color: #00008b;">for</span> (;;) {
+    lsize = node_size(t-&gt;left);
+    <span style="color: #00008b;">if</span> (r &lt; lsize) {
+      t = t-&gt;left;
+    } <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span> (r &gt; lsize) {
+      r = r - lsize -1;
+      t = t-&gt;right;
+    } <span style="color: #00008b;">else</span> {
+      <span style="color: #00008b;">return</span> t;
+    }
+  }
+}
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">printtree</span>(<span style="color: #36648b;">Tree</span> * <span style="color: #b8860b;">t</span>, <span style="color: #36648b;">int</span> <span style="color: #b8860b;">d</span>) {
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>;
+  <span style="color: #00008b;">if</span> (t == <span style="color: #6b8e23;">NULL</span>) <span style="color: #00008b;">return</span>;
+  printtree(t-&gt;right, d+1);
+  <span style="color: #00008b;">for</span> (i=0; i&lt;d; i++) printf(<span style="color: #8b0000;">"  "</span>);
+  printf(<span style="color: #8b0000;">"%d(%d)\n"</span>, t-&gt;key, t-&gt;size);
+  printtree(t-&gt;left, d+1);
+}
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>() {
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">A sample use of these functions.  Start with the empty tree,         */</span>
+  <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">insert some stuff into it, and then delete it                        */</span>
+  <span style="color: #36648b;">Tree</span> * <span style="color: #b8860b;">root</span>, *<span style="color: #b8860b;">t</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>;
+  root = <span style="color: #6b8e23;">NULL</span>;              <span style="color: #8c8c8c;">/* </span><span style="color: #8c8c8c;">the empty tree */</span>
+  <span style="color: #00008b;">for</span> (i = 0; i &lt; 100; i++) {
+    root = insert((541*i) &amp; (1023), root);
+  }
+  
+  printtree(root, 0);
+  
+  <span style="color: #00008b;">for</span> (i = -1; i&lt;=100; i++) {
+    t = find_rank(i, root);
+    <span style="color: #00008b;">if</span> (t == <span style="color: #6b8e23;">NULL</span>) {
+      printf(<span style="color: #8b0000;">"could not find a node of rank %d.\n"</span>, i);
+    } <span style="color: #00008b;">else</span> {
+      printf(<span style="color: #8b0000;">"%d is of rank %d\n"</span>, t-&gt;key, i);
+    }
+  }
+  
+  printtree(root, 0);
+  
+  <span style="color: #00008b;">for</span> (i=0; i&lt;1000; i=i+20) {
+    root = splay(i, root);
+    printf(<span style="color: #8b0000;">"There are %d elements to the left of %d in the set.\n"</span>,
+           node_size(root-&gt;left), i);
+  }
+  
+  <span style="color: #00008b;">for</span> (i = 0; i &lt; 100; i++) {
+    root = <span style="color: #00008b;">delete</span>((541*i) &amp; (1023), root);
+  }
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-10-13 13:37:44 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

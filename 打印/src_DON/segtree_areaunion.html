@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>Segment Tree: Area Union</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-10-13 13:50:09 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">Segment Tree: Area Union</h1>
+
+<ul>
+<li>
+POJ 1389 Area of Simple Polygons
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstdio&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstring&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;algorithm&gt;</span>
+<span style="color: #00008b;">using</span> <span style="color: #00008b;">namespace</span> <span style="color: #6b8e23;">std</span>;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXREC</span>=1000;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXL</span>=50001;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXN</span>=131071;
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">Seg</span>{
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">posx</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #b8860b;">e</span>;
+  <span style="color: #36648b;">bool</span> <span style="color: #b8860b;">in</span>;
+  <span style="color: #36648b;">bool</span> <span style="color: #00008b;">operator</span><span style="color: #6a5acd; font-weight: bold; font-style: italic;">&lt;</span>(<span style="color: #00008b;">const</span> <span style="color: #36648b;">Seg</span>&amp; <span style="color: #b8860b;">s</span>) <span style="color: #00008b;">const</span>{
+    <span style="color: #00008b;">return</span> posx&lt;s.posx;
+  }
+};
+<span style="color: #36648b;">Seg</span> <span style="color: #b8860b;">S</span>[MAXREC*2];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">top</span>;
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">Node</span>{
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #b8860b;">e</span>;
+};
+<span style="color: #36648b;">Node</span> <span style="color: #b8860b;">ST</span>[MAXN];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">cnt</span>[MAXN];
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">build</span>(){
+  memset(ST,0,<span style="color: #00008b;">sizeof</span>(ST));
+  ST[0].b=0;ST[0].e=MAXL;
+  <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;MAXN;++i){
+    <span style="color: #00008b;">if</span>(ST[i].b==0 &amp;&amp; ST[i].e==0) <span style="color: #00008b;">continue</span>;
+    <span style="color: #00008b;">if</span>(ST[i].b+1 == ST[i].e) <span style="color: #00008b;">continue</span>;
+
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">l</span>=2*i+1,<span style="color: #b8860b;">r</span>=2*i+2;
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(ST[i].b+ST[i].e)&gt;&gt;1;
+    ST[l].b=ST[i].b;ST[l].e=m;
+    ST[r].b=m;ST[r].e=ST[i].e;
+  }
+}
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">insert</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0){
+  <span style="color: #00008b;">if</span>(b==ST[i].b &amp;&amp; e==ST[i].e){
+    <span style="color: #00008b;">if</span>(cnt[i]&gt;=0){
+      ++cnt[i];<span style="color: #00008b;">return</span>;
+    }
+  }
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">l</span>=2*i+1,<span style="color: #b8860b;">r</span>=2*i+2;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(ST[i].b+ST[i].e)&gt;&gt;1;
+  <span style="color: #00008b;">if</span>(cnt[i]&gt;=0){
+    cnt[l]=cnt[r]=cnt[i];
+    cnt[i]=-1;
+  }
+  <span style="color: #00008b;">if</span>(b&gt;=m) insert(b,e,r);
+  <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(e&lt;=m) insert(b,e,l);
+  <span style="color: #00008b;">else</span>{
+    insert(b,m,l);
+    insert(m,e,r);
+  }
+}
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">erase</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0){
+  <span style="color: #00008b;">if</span>(b==ST[i].b &amp;&amp; e==ST[i].e){
+    <span style="color: #00008b;">if</span>(cnt[i]&gt;0){
+      --cnt[i];<span style="color: #00008b;">return</span>;
+    }
+  }
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">l</span>=2*i+1,<span style="color: #b8860b;">r</span>=2*i+2;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(ST[i].b+ST[i].e)&gt;&gt;1;
+  
+  <span style="color: #00008b;">if</span>(b&gt;=m) erase(b,e,r);
+  <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(e&lt;=m) erase(b,e,l);
+  <span style="color: #00008b;">else</span>{
+    erase(b,m,l);
+    erase(m,e,r);
+  }
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">query</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0){
+  <span style="color: #00008b;">if</span>(b==ST[i].b &amp;&amp; e==ST[i].e){
+    <span style="color: #00008b;">if</span>(cnt[i]&gt;0) <span style="color: #00008b;">return</span> e-b;
+    <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(cnt[i]==0) <span style="color: #00008b;">return</span> 0;
+  }
+
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">l</span>=2*i+1,<span style="color: #b8860b;">r</span>=2*i+2;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(ST[i].b+ST[i].e)&gt;&gt;1;
+  <span style="color: #00008b;">if</span>(b&gt;=m) <span style="color: #00008b;">return</span> query(b,e,r);
+  <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(e&lt;=m) <span style="color: #00008b;">return</span> query(b,e,l);
+  <span style="color: #00008b;">else</span>
+    <span style="color: #00008b;">return</span> query(b,m,l)+query(m,e,r);
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>(){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">a</span>,<span style="color: #b8860b;">b</span>,<span style="color: #b8860b;">c</span>,<span style="color: #b8860b;">d</span>;
+  build();
+  <span style="color: #00008b;">while</span>(scanf(<span style="color: #8b0000;">"%d%d%d%d"</span>,&amp;a,&amp;b,&amp;c,&amp;d)==4 &amp;&amp; a&gt;=0){
+    memset(cnt,0,<span style="color: #00008b;">sizeof</span>(cnt));
+    top=0;
+    S[top].b=b;S[top].e=d;S[top].posx=a;S[top].in=<span style="color: #6b8e23;">true</span>;++top;
+    S[top].b=b;S[top].e=d;S[top].posx=c;S[top].in=<span style="color: #6b8e23;">false</span>;++top;
+    <span style="color: #00008b;">while</span>(scanf(<span style="color: #8b0000;">"%d%d%d%d"</span>,&amp;a,&amp;b,&amp;c,&amp;d)==4 &amp;&amp; a&gt;=0){
+      S[top].b=b;S[top].e=d;S[top].posx=a;S[top].in=<span style="color: #6b8e23;">true</span>;++top;
+      S[top].b=b;S[top].e=d;S[top].posx=c;S[top].in=<span style="color: #6b8e23;">false</span>;++top;
+    }
+    sort(S,S+top);
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">area</span>=0;
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">x</span>=S[0].posx;
+    insert(S[0].b,S[0].e);
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=1;i&lt;top;++i){
+      <span style="color: #36648b;">int</span> <span style="color: #b8860b;">a</span>=query(0,MAXL);
+      <span style="color: #36648b;">int</span> <span style="color: #b8860b;">h</span>=S[i].posx-x;
+      area+=a*h;
+      x=S[i].posx;
+      <span style="color: #00008b;">if</span>(S[i].in)
+        insert(S[i].b,S[i].e);      
+      <span style="color: #00008b;">else</span> erase(S[i].b,S[i].e);
+    }
+    printf(<span style="color: #8b0000;">"%d\n"</span>,area);
+  }
+  <span style="color: #00008b;">return</span> 0;
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-10-13 13:50:09 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

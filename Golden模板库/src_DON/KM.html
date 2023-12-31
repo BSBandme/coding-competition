@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>KM</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-11-02 20:34:52 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">KM</h1>
+
+<ul>
+<li>
+wangfangbob
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstdio&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstring&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;vector&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;utility&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cmath&gt;</span>
+<span style="color: #00008b;">using</span> <span style="color: #00008b;">namespace</span> <span style="color: #6b8e23;">std</span>;
+<span style="color: #0000cd;">#define</span> <span style="color: #b8860b;">MAX</span> 100
+<span style="color: #0000cd;">#define</span> <span style="color: #b8860b;">MAX2</span> 100
+<span style="color: #0000cd;">#define</span> <span style="color: #b8860b;">INF</span> 0x7f7f7f7f
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">Node</span>{
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">v</span>,<span style="color: #b8860b;">w</span>;
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">next</span>;
+};
+<span style="color: #36648b;">Node</span> <span style="color: #b8860b;">Pool</span>[MAX*MAX2],*<span style="color: #b8860b;">pp</span>,*<span style="color: #b8860b;">adj</span>[MAX];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">match</span>[MAX2],<span style="color: #b8860b;">w</span>[MAX2],<span style="color: #b8860b;">slack</span>[MAX2],<span style="color: #b8860b;">lx</span>[MAX],<span style="color: #b8860b;">ly</span>[MAX2];
+<span style="color: #36648b;">bool</span> <span style="color: #b8860b;">visx</span>[MAX],<span style="color: #b8860b;">visy</span>[MAX2];
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">Create</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">v</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">w</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">next</span>){
+  pp-&gt;v=v;
+  pp-&gt;w=w;
+  pp-&gt;next=next;
+  <span style="color: #00008b;">return</span> pp++;
+}
+<span style="color: #36648b;">bool</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">dfs</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">adj</span>[MAX],<span style="color: #36648b;">int</span> <span style="color: #b8860b;">v</span>){
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">p</span>;
+  visx[v]=<span style="color: #6b8e23;">true</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">t</span>;
+  <span style="color: #00008b;">for</span>(p=adj[v];p;p=p-&gt;next){
+    <span style="color: #00008b;">if</span>(match[p-&gt;v]==-1 &amp;&amp; lx[v]+ly[p-&gt;v]==p-&gt;w){
+      visy[p-&gt;v]=<span style="color: #6b8e23;">true</span>;
+      match[p-&gt;v]=v;
+      w[p-&gt;v]=p-&gt;w;
+      <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">true</span>;
+    }
+  }
+  <span style="color: #00008b;">for</span>(p=adj[v];p;p=p-&gt;next){
+    <span style="color: #00008b;">if</span>(!visy[p-&gt;v]){
+      t=p-&gt;w-lx[v]-ly[p-&gt;v];
+      <span style="color: #00008b;">if</span>(t==0){
+        visy[p-&gt;v]=<span style="color: #6b8e23;">true</span>;
+        <span style="color: #00008b;">if</span>(dfs(adj,match[p-&gt;v])){
+          match[p-&gt;v]=v;
+          w[p-&gt;v]=p-&gt;w;
+          <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">true</span>;
+        }
+      }
+      <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(slack[p-&gt;v]&gt;t) slack[p-&gt;v]=t;
+    }
+  }
+  <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">false</span>;
+}
+
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">KM</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">adj</span>[MAX],<span style="color: #36648b;">int</span> <span style="color: #b8860b;">nv1</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">nv2</span>){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>,<span style="color: #b8860b;">j</span>,<span style="color: #b8860b;">s</span>,<span style="color: #b8860b;">res</span>=0;
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">p</span>;
+  memset(match,-1,nv2*<span style="color: #00008b;">sizeof</span>(match[0]));
+  memset(ly,0,nv2*<span style="color: #00008b;">sizeof</span>(ly[0]));
+  <span style="color: #00008b;">for</span>(i=0;i&lt;nv1;++i){
+    <span style="color: #00008b;">for</span>(p=adj[i],lx[i]=0;p;p=p-&gt;next){
+      <span style="color: #00008b;">if</span>(p-&gt;w&lt;lx[i]) lx[i]=p-&gt;w;
+    }
+  }
+  <span style="color: #00008b;">for</span>(i=0;i&lt;nv1;++i){
+    memset(slack,0x7f,nv2*<span style="color: #00008b;">sizeof</span>(slack[0]));
+    <span style="color: #00008b;">while</span>(1){
+      memset(visy,0,nv2);
+      memset(visx,0,nv1);
+      <span style="color: #00008b;">if</span>(dfs(adj,i)) <span style="color: #00008b;">break</span>;
+      <span style="color: #00008b;">for</span>(j=0,s=INF;j&lt;nv2;++j){
+        <span style="color: #00008b;">if</span>(!visy[j]&amp;&amp;s&gt;slack[j]) s=slack[j];
+      }
+      <span style="color: #00008b;">for</span>(j=0;j&lt;nv1;++j){
+        <span style="color: #00008b;">if</span>(visx[j]) lx[j]+=s;
+      }
+      <span style="color: #00008b;">for</span>(j=0;j&lt;nv2;++j){
+        <span style="color: #00008b;">if</span>(visy[j]) ly[j]-=s;
+        <span style="color: #00008b;">else</span> slack[j]-=s;
+      }
+    }
+  }
+  <span style="color: #00008b;">for</span>(i=0;i&lt;nv2;++i)
+    <span style="color: #00008b;">if</span>(match[i]!=-1) res+=w[i];
+  <span style="color: #00008b;">return</span> res;
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>(){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">r</span>,<span style="color: #b8860b;">c</span>;
+  <span style="color: #00008b;">while</span>(scanf(<span style="color: #8b0000;">"%d%d"</span>,&amp;r,&amp;c) &amp;&amp; r!=0&amp;&amp;c!=0){
+    <span style="color: #36648b;">vector</span>&lt;<span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">int</span>,<span style="color: #36648b;">int</span>&gt; &gt; <span style="color: #b8860b;">m</span>;
+    <span style="color: #36648b;">vector</span>&lt;<span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">int</span>,<span style="color: #36648b;">int</span>&gt; &gt; <span style="color: #b8860b;">H</span>;
+    <span style="color: #36648b;">char</span> <span style="color: #b8860b;">buf</span>[110];
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;r;++i){
+      scanf(<span style="color: #8b0000;">"%s"</span>,buf);
+      <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">j</span>=0;j&lt;c;++j){
+        <span style="color: #00008b;">if</span>(buf[j]==<span style="color: #8b0000;">'m'</span>) m.push_back(make_pair(j,i));
+        <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(buf[j]==<span style="color: #8b0000;">'H'</span>) H.push_back(make_pair(j,i));
+      }
+    }
+    <span style="color: #00008b;">typedef</span> <span style="color: #6b8e23;">vector</span>&lt;<span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">int</span>,<span style="color: #36648b;">int</span>&gt; &gt;::<span style="color: #36648b;">iterator</span> <span style="color: #36648b;">Iter</span>;
+    memset(adj,0,<span style="color: #00008b;">sizeof</span>(adj));
+    pp=Pool;
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">Iter</span> <span style="color: #b8860b;">i</span>=m.begin();i!=m.end();++i){
+      <span style="color: #00008b;">for</span>(<span style="color: #36648b;">Iter</span> <span style="color: #b8860b;">j</span>=H.begin();j!=H.end();++j){
+        <span style="color: #36648b;">int</span> <span style="color: #b8860b;">cost</span>=abs(i-&gt;first-j-&gt;first)+abs(i-&gt;second-j-&gt;second);
+        adj[i-m.begin()]=Create(j-H.begin(),cost,adj[i-m.begin()]);
+      }
+    }
+    printf(<span style="color: #8b0000;">"%d\n"</span>,KM(adj,m.size(),H.size()));
+  }
+  <span style="color: #00008b;">return</span> 0;
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-11-02 20:34:52 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

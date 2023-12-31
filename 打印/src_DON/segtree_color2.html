@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>Segment Tree: Color</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-10-13 13:58:48 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">Segment Tree: Color</h1>
+
+<ul>
+<li>
+POJ 2528 Mayor's posters
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstdio&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstring&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;algorithm&gt;</span>
+<span style="color: #00008b;">using</span> <span style="color: #00008b;">namespace</span> <span style="color: #6b8e23;">std</span>;
+
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXL</span>=10000001;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXNODE</span>=3000000;
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">Node</span>{
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #b8860b;">e</span>;
+  <span style="color: #36648b;">short</span> <span style="color: #b8860b;">id</span>;
+  <span style="color: #36648b;">Node</span> *<span style="color: #b8860b;">l</span>,*<span style="color: #b8860b;">r</span>;
+};
+<span style="color: #36648b;">Node</span> <span style="color: #b8860b;">Pool</span>[MAXNODE];
+<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">pPool</span>;
+<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">R</span>;
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">build</span>(){
+  pPool=Pool;
+  R=pPool++;
+  R-&gt;b=1;R-&gt;e=MAXL;
+  R-&gt;id=0;
+  R-&gt;l=R-&gt;r=0;
+}
+<span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">SegTree[root].b&lt;= b&lt;e &lt;=SegTree[root].e
+</span><span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">insert</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">c</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">root</span>){
+  <span style="color: #00008b;">if</span>(b==root-&gt;b &amp;&amp; e==root-&gt;e){
+    root-&gt;id=c;
+    <span style="color: #00008b;">return</span>;
+  }
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(root-&gt;b+root-&gt;e)&gt;&gt;1;
+  <span style="color: #00008b;">if</span>(root-&gt;l==0){
+    root-&gt;l=pPool++;
+    root-&gt;l-&gt;b=root-&gt;b;root-&gt;l-&gt;e=m;
+    root-&gt;l-&gt;l=root-&gt;l-&gt;r=0;
+    root-&gt;l-&gt;id=0;
+  }
+  <span style="color: #00008b;">if</span>(root-&gt;r==0){
+    root-&gt;r=pPool++;
+    root-&gt;r-&gt;b=m;root-&gt;r-&gt;e=root-&gt;e;
+    root-&gt;r-&gt;l=root-&gt;r-&gt;r=0;
+    root-&gt;r-&gt;id=0;
+  }
+
+  <span style="color: #00008b;">if</span>(root-&gt;id&gt;0){
+    root-&gt;l-&gt;id=root-&gt;r-&gt;id=root-&gt;id;
+    root-&gt;id=-1;
+  }
+
+  <span style="color: #00008b;">if</span>(b&gt;=m) insert(b,e,c,root-&gt;r);
+  <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(e&lt;=m) insert(b,e,c,root-&gt;l);
+  <span style="color: #00008b;">else</span>{
+    insert(b,m,c,root-&gt;l);insert(m,e,c,root-&gt;r);
+  }
+}
+
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXM</span>=10010;
+<span style="color: #36648b;">bool</span> <span style="color: #b8860b;">book</span>[MAXM];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">M</span>;
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">query</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">root</span>){
+  <span style="color: #00008b;">if</span>(root==0) <span style="color: #00008b;">return</span>;
+  <span style="color: #00008b;">if</span>(root-&gt;id&gt;0){
+    book[root-&gt;id]=<span style="color: #6b8e23;">true</span>;
+    <span style="color: #00008b;">return</span>;
+  }
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=(root-&gt;b+root-&gt;e)&gt;&gt;1;
+  <span style="color: #00008b;">if</span>(b&gt;=m) query(b,e,root-&gt;r);
+  <span style="color: #00008b;">else</span> <span style="color: #00008b;">if</span>(e&lt;=m) query(b,e,root-&gt;l);
+  <span style="color: #00008b;">else</span>{
+    query(b,m,root-&gt;l);
+    query(m,e,root-&gt;r);
+  }
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">count1</span>(){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">cnt</span>=0;
+  <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=1;i&lt;=M;++i){
+    <span style="color: #00008b;">if</span>(book[i]) ++cnt;
+  }
+  <span style="color: #00008b;">return</span> cnt;
+}
+
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>(){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">T</span>;
+  scanf(<span style="color: #8b0000;">"%d"</span>,&amp;T);
+  <span style="color: #00008b;">while</span>(T--&gt;0){
+    build();
+    scanf(<span style="color: #8b0000;">"%d"</span>,&amp;M);
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=1;i&lt;=M;++i){
+      <span style="color: #36648b;">int</span> <span style="color: #b8860b;">a</span>,<span style="color: #b8860b;">b</span>;
+      scanf(<span style="color: #8b0000;">"%d%d"</span>,&amp;a,&amp;b);
+      insert(a,b+1,i,R);
+    }
+    memset(book,0,<span style="color: #00008b;">sizeof</span>(book));
+    query(1,MAXL,R);
+    printf(<span style="color: #8b0000;">"%d\n"</span>,count1());
+  }
+  <span style="color: #00008b;">return</span> 0;
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-10-13 13:58:48 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

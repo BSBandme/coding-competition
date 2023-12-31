@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>Mult-Binary Index Array</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-10-13 13:52:34 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">Mult-Binary Index Array</h1>
+
+<ul>
+<li>
+POJ 1195 Mobile phones
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstdio&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstring&gt;</span>
+<span style="color: #00008b;">using</span> <span style="color: #00008b;">namespace</span> <span style="color: #6b8e23;">std</span>;
+
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">lowbit</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">x</span>){<span style="color: #00008b;">return</span> x &amp; -x;}
+
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXN</span>=1025;
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">S</span>;
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">bit</span>[MAXN][MAXN];
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">insert</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">x</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">y</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">n</span>){
+  <span style="color: #00008b;">while</span>(x&lt;=S){
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">t</span>=y;
+    <span style="color: #00008b;">while</span>(t&lt;=S){
+      bit[x][t]+=n;
+      t+=lowbit(t);
+    }
+    x+=lowbit(x);
+  }
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">query</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">x</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">y</span>){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">result</span>=0;
+  <span style="color: #00008b;">while</span>(x!=0){
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">t</span>=y;
+    <span style="color: #00008b;">while</span>(t!=0){
+      result+=bit[x][t];
+      t-=lowbit(t);
+    }
+    x-=lowbit(x);
+  }
+  <span style="color: #00008b;">return</span> result;
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">query</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">l</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">r</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">a</span>,<span style="color: #b8860b;">e</span>,<span style="color: #b8860b;">c</span>,<span style="color: #b8860b;">d</span>;
+  <span style="color: #00008b;">if</span>(b-1&gt;0) a=query(r,b-1);<span style="color: #00008b;">else</span> a=0;
+  <span style="color: #00008b;">if</span>(l-1&gt;0) e=query(l-1,t);<span style="color: #00008b;">else</span> e=0;
+  <span style="color: #00008b;">if</span>(l-1&gt;0 &amp;&amp; b-1&gt;0) c=query(l-1,b-1);<span style="color: #00008b;">else</span> c=0;
+  d=query(r,t);
+  <span style="color: #00008b;">return</span> d-a-e+c;
+}
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>(){
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">C</span>;
+  <span style="color: #00008b;">while</span>(scanf(<span style="color: #8b0000;">"%d"</span>,&amp;C)==1){
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">X</span>,<span style="color: #b8860b;">Y</span>,<span style="color: #b8860b;">A</span>;
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">L</span>,<span style="color: #b8860b;">B</span>,<span style="color: #b8860b;">R</span>,<span style="color: #b8860b;">T</span>;
+    <span style="color: #00008b;">switch</span>(C){
+    <span style="color: #00008b;">case</span> 3:<span style="color: #00008b;">break</span>;
+    <span style="color: #00008b;">case</span> 0:scanf(<span style="color: #8b0000;">"%d"</span>,&amp;S);memset(bit,0,<span style="color: #00008b;">sizeof</span>(bit));<span style="color: #00008b;">break</span>;
+    <span style="color: #00008b;">case</span> 1:scanf(<span style="color: #8b0000;">"%d%d%d"</span>,&amp;X,&amp;Y,&amp;A);insert(X+1,Y+1,A);<span style="color: #00008b;">break</span>;
+    <span style="color: #00008b;">case</span> 2:scanf(<span style="color: #8b0000;">"%d%d%d%d"</span>,&amp;L,&amp;B,&amp;R,&amp;T);printf(<span style="color: #8b0000;">"%d\n"</span>,query(L+1,B+1,R+1,T+1));<span style="color: #00008b;">break</span>;
+    }
+  }
+  <span style="color: #00008b;">return</span> 0;
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-10-13 13:52:34 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

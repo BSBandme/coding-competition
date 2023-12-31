@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>BVH</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-11-02 15:23:48 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">BVH</h1>
+
+<ul>
+<li>
+Build
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXN</span>=100;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXQ</span>=1000;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXPOOL</span>=255;
+
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">N</span>;
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">edge_t</span>{
+  <span style="color: #36648b;">Point</span> <span style="color: #b8860b;">a</span>,<span style="color: #b8860b;">b</span>;
+};
+<span style="color: #36648b;">edge_t</span> <span style="color: #b8860b;">edges</span>[MAXN][MAXQ];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">edge_cnt</span>[MAXN];
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">aabb_t</span>{
+  <span style="color: #36648b;">Point</span> <span style="color: #b8860b;">s</span>,<span style="color: #b8860b;">t</span>;
+  <span style="color: #36648b;">Point</span> <span style="color: #b8860b;">c</span>;
+};
+<span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">box</span>[MAXN];
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">aabb_t</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">Union</span>(<span style="color: #00008b;">const</span> <span style="color: #36648b;">aabb_t</span>&amp; <span style="color: #b8860b;">p</span>,<span style="color: #00008b;">const</span> <span style="color: #36648b;">aabb_t</span>&amp; <span style="color: #b8860b;">q</span>){
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">minx</span>=INF,<span style="color: #b8860b;">miny</span>=INF;
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">maxx</span>=NEGINF,<span style="color: #b8860b;">maxy</span>=NEGINF;
+  <span style="color: #00008b;">if</span>(ls(p.s.x,minx)) minx=p.s.x; <span style="color: #00008b;">if</span>(ls(q.s.x,minx)) minx=q.s.x;
+  <span style="color: #00008b;">if</span>(ls(p.s.y,miny)) miny=p.s.y; <span style="color: #00008b;">if</span>(ls(q.s.y,miny)) miny=q.s.y;
+  <span style="color: #00008b;">if</span>(gr(p.t.x,maxx)) maxx=p.t.x; <span style="color: #00008b;">if</span>(gr(q.t.x,maxx)) maxx=q.t.x;
+  <span style="color: #00008b;">if</span>(gr(p.t.y,maxy)) maxy=p.t.y; <span style="color: #00008b;">if</span>(gr(q.t.y,maxy)) maxy=q.t.y;
+  <span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">ans</span>;
+  ans.s=Point(minx,miny);ans.t=Point(maxx,maxy);ans.c=(ans.s+ans.t)*0.5f;
+  <span style="color: #00008b;">return</span> ans;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">aabb_t</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">Union</span>(<span style="color: #00008b;">const</span> <span style="color: #36648b;">aabb_t</span>&amp; <span style="color: #b8860b;">q</span>,<span style="color: #00008b;">const</span> <span style="color: #36648b;">Point</span>&amp; <span style="color: #b8860b;">p</span>){
+  <span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">ans</span>;
+  <span style="color: #00008b;">if</span>(ls(p.x,q.s.x)) ans.s.x=p.x; <span style="color: #00008b;">else</span> ans.s.x=q.s.x;
+  <span style="color: #00008b;">if</span>(ls(p.y,q.s.y)) ans.s.y=p.y; <span style="color: #00008b;">else</span> ans.s.y=q.s.y;
+  <span style="color: #00008b;">if</span>(gr(p.x,q.t.x)) ans.t.x=p.x; <span style="color: #00008b;">else</span> ans.t.x=q.t.x;
+  <span style="color: #00008b;">if</span>(gr(p.y,q.t.y)) ans.t.y=p.y; <span style="color: #00008b;">else</span> ans.t.y=q.t.y;
+  ans.c=(ans.s+ans.t)*0.5f;
+  <span style="color: #00008b;">return</span> ans;
+}
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">node_t</span>{
+  <span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">aabb</span>;
+  <span style="color: #36648b;">node_t</span> *<span style="color: #b8860b;">lc</span>,*<span style="color: #b8860b;">rc</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">geom</span>;
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">0:x 1:y
+</span>  <span style="color: #36648b;">char</span> <span style="color: #b8860b;">axis</span>;
+};
+<span style="color: #36648b;">node_t</span> <span style="color: #b8860b;">Pool</span>[MAXPOOL];
+<span style="color: #36648b;">node_t</span>* <span style="color: #b8860b;">pPool</span>;
+<span style="color: #36648b;">node_t</span>* <span style="color: #b8860b;">Root</span>;
+
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">sorted</span>[MAXN];
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">pred_t</span>{
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">p</span>;
+  <span style="color: #36648b;">char</span> <span style="color: #b8860b;">axis</span>;
+  <span style="color: #6a5acd; font-weight: bold; font-style: italic;">pred_t</span>(<span style="color: #36648b;">double</span> <span style="color: #b8860b;">v</span>,<span style="color: #36648b;">char</span> <span style="color: #b8860b;">a</span>):p(v),axis(a){}
+  <span style="color: #36648b;">bool</span> <span style="color: #00008b;">operator</span><span style="color: #6a5acd; font-weight: bold; font-style: italic;">()</span>(<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span>&amp; <span style="color: #b8860b;">a</span>) <span style="color: #00008b;">const</span>{
+    <span style="color: #36648b;">Point</span> <span style="color: #b8860b;">c</span>=box[a].c;
+    <span style="color: #00008b;">if</span>(axis==0) <span style="color: #00008b;">return</span> ls(c.x,p);
+    <span style="color: #00008b;">else</span> <span style="color: #00008b;">return</span> ls(c.y,p);
+  }
+};
+
+<span style="color: #36648b;">node_t</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">build</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">b</span>,<span style="color: #36648b;">int</span> <span style="color: #b8860b;">e</span>){
+  <span style="color: #36648b;">node_t</span>* <span style="color: #b8860b;">node</span>=pPool++;
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">terminal state
+</span>  <span style="color: #00008b;">if</span>(b+1==e){
+    node-&gt;lc=node-&gt;rc=0;
+    node-&gt;geom=sorted[b];
+    node-&gt;aabb=box[node-&gt;geom];
+    <span style="color: #00008b;">return</span> node;
+  }
+
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">build over all bounding box
+</span>  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">and find the max-variation axis
+</span>  <span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">all</span>=box[sorted[b]];
+  <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=b+1;i&lt;e;++i){
+    all=Union(all,box[sorted[i]]);
+  }
+
+  <span style="color: #36648b;">aabb_t</span> <span style="color: #b8860b;">cen</span>;
+  cen.s=Point(INF,INF);
+  cen.t=Point(NEGINF,NEGINF);
+  <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=b;i&lt;e;++i){
+    cen=Union(cen,box[sorted[i]].c);
+  }
+  <span style="color: #36648b;">char</span> <span style="color: #b8860b;">axis</span>;
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">mid</span>;
+  <span style="color: #36648b;">Vec</span> <span style="color: #b8860b;">extent</span>=cen.t-cen.s;
+  <span style="color: #00008b;">if</span>(gr(extent.x,extent.y)){
+    axis=0;mid=cen.c.x;
+  }
+  <span style="color: #00008b;">else</span>{
+    axis=1;mid=cen.c.y;
+  }
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">partition
+</span>  <span style="color: #36648b;">int</span>* <span style="color: #b8860b;">p</span>=partition(sorted+b,sorted+e,pred_t(mid,axis));
+  
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">construct the new node
+</span>  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">m</span>=p-sorted;
+
+  node-&gt;aabb=all;
+  node-&gt;lc=build(b,m);
+  node-&gt;rc=build(m,e);
+  node-&gt;axis=axis;
+  node-&gt;geom=-1;
+  <span style="color: #00008b;">return</span> node;
+}
+</pre>
+
+
+
+<ul>
+<li>
+Intersect
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #36648b;">Point</span> <span style="color: #b8860b;">ori</span>;<span style="color: #36648b;">Vec</span> <span style="color: #b8860b;">dir</span>;
+<span style="color: #36648b;">double</span> <span style="color: #b8860b;">tmin</span>;
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">id</span>;
+<span style="color: #36648b;">bool</span> <span style="color: #b8860b;">mailbox</span>[MAXN];
+
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">bool</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">intersectP</span>(<span style="color: #00008b;">const</span> <span style="color: #36648b;">aabb_t</span>&amp; <span style="color: #b8860b;">aabb</span>){
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">txmin</span>,<span style="color: #b8860b;">txmax</span>,<span style="color: #b8860b;">tymin</span>,<span style="color: #b8860b;">tymax</span>;
+  <span style="color: #36648b;">Point</span> <span style="color: #b8860b;">bound</span>[]={
+    <span style="color: #b8860b;">Point</span>(aabb.s.x,aabb.s.y),
+    <span style="color: #b8860b;">Point</span>(aabb.t.x,aabb.t.y)
+  };
+  <span style="color: #36648b;">bool</span> <span style="color: #b8860b;">dirIsNeg</span>[]={ls(dir.x,0),ls(dir.y,0)};
+  <span style="color: #00008b;">if</span>(equ(aabb.s.x,ori.x)){
+    txmin=NEGINF;txmax=INF;
+  }
+  <span style="color: #00008b;">else</span>{
+    txmin=(bound[ dirIsNeg[0]].x - ori.x) / dir.x;
+    txmax=(bound[ 1-dirIsNeg[0]].x - ori.x) / dir.x;
+  }
+
+  <span style="color: #00008b;">if</span>(equ(aabb.s.y,ori.y)){
+    tymin=NEGINF;tymax=INF;
+  }
+  <span style="color: #00008b;">else</span>{
+    tymin=(bound[ dirIsNeg[1]].y - ori.y) / dir.y;
+    tymax=(bound[ 1-dirIsNeg[1]].y - ori.y) / dir.y;
+  }
+  <span style="color: #00008b;">if</span>(gr(txmin,tymax) || gr(tymin,txmax)) <span style="color: #00008b;">return</span> <span style="color: #6b8e23;">false</span>;
+  
+  <span style="color: #36648b;">double</span> <span style="color: #b8860b;">kmin</span>,<span style="color: #b8860b;">kmax</span>;
+  <span style="color: #00008b;">if</span>(ls(txmin,tymin)) kmin=tymin; <span style="color: #00008b;">else</span> kmin=txmin;
+  <span style="color: #00008b;">if</span>(gr(txmax,tymax)) kmax=tymax; <span style="color: #00008b;">else</span> kmax=txmax;
+  <span style="color: #00008b;">return</span> ls(kmin,tmin);
+}
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">intersect</span>(<span style="color: #36648b;">node_t</span>* <span style="color: #b8860b;">root</span>=Root){
+  <span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">terminal state
+</span>  <span style="color: #00008b;">if</span>(!intersectP(root-&gt;aabb)) <span style="color: #00008b;">return</span>;
+  <span style="color: #00008b;">if</span>(root-&gt;geom!=-1){
+    <span style="color: #00008b;">if</span>(mailbox[root-&gt;geom]) <span style="color: #00008b;">return</span>;
+    mailbox[root-&gt;geom]=<span style="color: #6b8e23;">true</span>;
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;edge_cnt[root-&gt;geom];++i){
+      <span style="color: #36648b;">double</span> <span style="color: #b8860b;">t</span>,<span style="color: #b8860b;">k</span>;
+      <span style="color: #00008b;">if</span>(ray_intersect(ori,dir,
+                       edges[root-&gt;geom][i].a,edges[root-&gt;geom][i].b - edges[root-&gt;geom][i].a,
+                       &amp;t,&amp;k)
+         &amp;&amp; gr(t,0.0f) &amp;&amp; greq(k,0.0f) &amp;&amp; lseq(k,1.0f)){
+        <span style="color: #00008b;">if</span>(ls(t,tmin)){
+          tmin=t;
+          id=root-&gt;geom;
+        }
+      }
+    }<span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">for
+</span>    <span style="color: #00008b;">return</span>;
+  }
+
+  <span style="color: #00008b;">if</span>(root-&gt;lc!=0) intersect(root-&gt;lc);
+  <span style="color: #00008b;">if</span>(root-&gt;rc!=0) intersect(root-&gt;rc);
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-11-02 15:23:48 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

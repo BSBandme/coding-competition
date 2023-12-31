@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+lang="en" xml:lang="en">
+<head>
+<title>top-down splay</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2010-10-13 08:30:33 CST"/>
+<meta name="author" content=""/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+
+<h1 class="title">top-down splay</h1>
+
+<ul>
+<li>
+POJ Sliding Window
+
+</li>
+</ul>
+
+
+<pre class="src src-c++"><span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstdio&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;cstring&gt;</span>
+<span style="color: #0000cd;">#include</span> <span style="color: #8b0000;">&lt;utility&gt;</span>
+<span style="color: #00008b;">using</span> <span style="color: #00008b;">namespace</span> <span style="color: #6b8e23;">std</span>;
+
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">MAXN</span>=1000001;
+<span style="color: #00008b;">const</span> <span style="color: #36648b;">int</span> <span style="color: #b8860b;">INF</span>=0x7fffffff;
+
+<span style="color: #00008b;">struct</span> <span style="color: #36648b;">Node</span>{
+  <span style="color: #36648b;">Node</span> *<span style="color: #b8860b;">left</span>,*<span style="color: #b8860b;">right</span>;
+  <span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>;
+};
+
+<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">nil</span>;
+<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">root</span>;
+<span style="color: #36648b;">Node</span> <span style="color: #b8860b;">Pool</span>[MAXN];
+<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">pPool</span>;
+
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">rotate_left</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">y</span>=t-&gt;right;
+  t-&gt;right=y-&gt;left;
+  y-&gt;left=t;
+  <span style="color: #00008b;">return</span> y;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">rotate_right</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">y</span>=t-&gt;left;
+  t-&gt;left=y-&gt;right;
+  y-&gt;right=t;
+  <span style="color: #00008b;">return</span> y;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">link_left</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">l</span>){
+  l-&gt;right=t;<span style="color: #00008b;">return</span> l-&gt;right;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">link_right</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">r</span>){
+  r-&gt;left=t;<span style="color: #00008b;">return</span> r-&gt;left;
+}
+<span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">splay</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">Node</span> <span style="color: #b8860b;">N</span>,*<span style="color: #b8860b;">l</span>,*<span style="color: #b8860b;">r</span>;
+  N.left=N.right=nil;
+  l=r=&amp;N;
+  <span style="color: #00008b;">while</span>(t!=nil &amp;&amp; t-&gt;key!=key){
+    <span style="color: #00008b;">if</span>(t-&gt;key &lt; key){
+      <span style="color: #00008b;">if</span>(t-&gt;right == nil) <span style="color: #00008b;">break</span>;
+      <span style="color: #00008b;">if</span>(t-&gt;right-&gt;key &lt; key){
+        t=rotate_left(t);
+        <span style="color: #00008b;">if</span>(t-&gt;right==nil) <span style="color: #00008b;">break</span>;
+      }
+      l=link_left(t,l);
+      t=t-&gt;right;
+    }
+    <span style="color: #00008b;">else</span>{
+      <span style="color: #00008b;">if</span>(t-&gt;left == nil) <span style="color: #00008b;">break</span>;
+      <span style="color: #00008b;">if</span>(t-&gt;left-&gt;key &gt; key){
+        t=rotate_right(t);
+        <span style="color: #00008b;">if</span>(t-&gt;left==nil) <span style="color: #00008b;">break</span>;
+      }
+      r=link_right(t,r);
+      t=t-&gt;left;
+    }
+  }
+  l-&gt;right=t-&gt;left;
+  r-&gt;left=t-&gt;right;
+  t-&gt;left=N.right;
+  t-&gt;right=N.left;
+  <span style="color: #00008b;">return</span> t;
+}
+
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">access</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){ <span style="color: #00008b;">return</span> splay(key,t);}
+<span style="color: #8c8c8c;">//</span><span style="color: #8c8c8c;">all x in k &lt; t
+</span><span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">join</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">k</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">y</span>;
+  <span style="color: #00008b;">if</span>(t==nil){
+    y=access(INF,k);
+    y-&gt;right=t;
+  }
+  <span style="color: #00008b;">else</span>{
+    y=access(-INF,t);
+    y-&gt;left=k;
+  }
+  <span style="color: #00008b;">return</span> y;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">Node</span>*,<span style="color: #36648b;">Node</span>*&gt; <span style="color: #6a5acd; font-weight: bold; font-style: italic;">split</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">Node</span>*,<span style="color: #36648b;">Node</span>*&gt; <span style="color: #b8860b;">ans</span>;
+  t=access(key,t);
+  <span style="color: #00008b;">if</span>(t-&gt;key &gt; key){
+    ans.first=t-&gt;left;t-&gt;left=nil;ans.second=t;
+  }
+  <span style="color: #00008b;">else</span>{
+    ans.second=t-&gt;right;t-&gt;right=nil;ans.first=t;
+  }
+  <span style="color: #00008b;">return</span> ans;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">insert</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">n</span>=pPool++;
+  <span style="color: #00008b;">if</span>(t==nil){
+    n-&gt;left=n-&gt;right=nil;
+    n-&gt;key=key;
+    <span style="color: #00008b;">return</span> n;
+  }
+  <span style="color: #36648b;">pair</span>&lt;<span style="color: #36648b;">Node</span>*,<span style="color: #36648b;">Node</span>*&gt; <span style="color: #b8860b;">s</span>=split(key,t);
+  n-&gt;left=s.first;
+  n-&gt;right=s.second;
+  n-&gt;key=key;
+  <span style="color: #00008b;">return</span> n;
+}
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">Node</span>* <span style="color: #6a5acd; font-weight: bold; font-style: italic;">erase</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">key</span>,<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  t=access(key,t);
+  <span style="color: #00008b;">if</span>(t-&gt;key!=key) <span style="color: #00008b;">return</span> t;
+  <span style="color: #00008b;">return</span> join(t-&gt;left,t-&gt;right);
+}
+
+<span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">Print</span>(<span style="color: #36648b;">Node</span>* <span style="color: #b8860b;">t</span>){
+  <span style="color: #00008b;">if</span>(t==nil) <span style="color: #00008b;">return</span>;
+  Print(t-&gt;left);
+  printf(<span style="color: #8b0000;">"%d "</span>,t-&gt;key);
+  Print(t-&gt;right);
+}
+
+<span style="color: #00008b;">inline</span> <span style="color: #36648b;">void</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">init</span>(){
+  pPool=Pool;
+  nil=pPool++;nil-&gt;left=nil-&gt;right=nil;
+  root=nil;
+}
+
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">N</span>,<span style="color: #b8860b;">K</span>;
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">arr</span>[MAXN];
+<span style="color: #36648b;">int</span> <span style="color: #b8860b;">Min</span>[MAXN],<span style="color: #b8860b;">Max</span>[MAXN];
+<span style="color: #36648b;">int</span> <span style="color: #6a5acd; font-weight: bold; font-style: italic;">main</span>(){
+  <span style="color: #00008b;">while</span>(scanf(<span style="color: #8b0000;">"%d%d"</span>,&amp;N,&amp;K)==2){
+    <span style="color: #36648b;">int</span> <span style="color: #b8860b;">cnt</span>=0;
+    init();
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;N;++i) scanf(<span style="color: #8b0000;">"%d"</span>,arr+i);
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;K-1;++i) root=insert(arr[i],root);
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=K-1;i&lt;N;++i){
+      root=insert(arr[i],root);
+      root=access(-INF,root);
+      Min[cnt]=root-&gt;key;
+      root=access(INF,root);
+      Max[cnt]=root-&gt;key;
+      ++cnt;
+      root=erase(arr[i-(K-1)],root);
+    }
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;cnt;++i) printf(<span style="color: #8b0000;">"%d "</span>,Min[i]);printf(<span style="color: #8b0000;">"\n"</span>);
+    <span style="color: #00008b;">for</span>(<span style="color: #36648b;">int</span> <span style="color: #b8860b;">i</span>=0;i&lt;cnt;++i) printf(<span style="color: #8b0000;">"%d "</span>,Max[i]);printf(<span style="color: #8b0000;">"\n"</span>);
+  }
+  <span style="color: #00008b;">return</span> 0;
+}
+</pre>
+
+
+
+<div id="postamble">
+<p class="author"> Author: 
+<a href="mailto:pixy@Sony">&lt;pixy@Sony&gt;</a>
+</p>
+<p class="date"> Date: 2010-10-13 08:30:33 CST</p>
+<p class="creator">HTML generated by org-mode 6.33x in emacs 23</p>
+</div>
+</div>
+</body>
+</html>

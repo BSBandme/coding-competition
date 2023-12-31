@@ -1,0 +1,15 @@
+已知x, y
+求a,b 使 ax + by = gcd(x, y)
+void gcd(long long num1, long long num2, long long &a, long long &b)
+{
+	long long i, j;
+ 	if(!(num1 % num2))
+	{
+		a = 1;
+		b = -num1 / num2 + 1;
+		return;
+	}
+	gcd(num2, num1 % num2, i, j);
+	a = j;
+	b = i - j * (num1 / num2);
+}
