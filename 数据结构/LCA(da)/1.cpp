@@ -1,3 +1,8 @@
+/*
+ * init: memset(fa, -1, sizeof(fa));
+ *      dfs(root); // get deep, fa[i][0]
+ *      initfa();
+ */
 int fa[maxn][22], deep[maxn];
 
 inline void initfa() {
