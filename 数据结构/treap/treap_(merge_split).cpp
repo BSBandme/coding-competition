@@ -68,6 +68,7 @@ struct TreapNode {
 			sum += l->sum;
 			minv = min(minv, l->minv);
 			leftv = l->leftv;
+			l->fa = this;
 		}
 
 		if (r != nullptr) {
@@ -75,6 +76,7 @@ struct TreapNode {
 			sum += r->sum;
 			minv = min(minv, r->minv);
 			rightv = r->rightv;
+			r->fa = this;
 		}
 	}
 
@@ -164,7 +166,6 @@ TreapNode* Merge(TreapNode *x, TreapNode *y) {
 		x->PushDown();
     TreapNode* rp = Merge(x->r, y);
 		x->r = rp;
-    rp->fa = x;
 		x->PushUp();
 
 		return x;
@@ -172,7 +173,6 @@ TreapNode* Merge(TreapNode *x, TreapNode *y) {
 		y->PushDown();
     TreapNode* rp = Merge(x, y->l);
 		y->l = rp;
-    rp->fa = y;
 		y->PushUp();
 
 		return y;
