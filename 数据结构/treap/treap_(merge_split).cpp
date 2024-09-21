@@ -162,13 +162,17 @@ TreapNode* Merge(TreapNode *x, TreapNode *y) {
 	}
 	if (x->weight < y->weight) {
 		x->PushDown();
-		x->r = Merge(x->r, y);
+    TreapNode* rp = Merge(x->r, y);
+		x->r = rp;
+    rp->fa = x;
 		x->PushUp();
 
 		return x;
 	} else {
 		y->PushDown();
-		y->l = Merge(x, y->l);
+    TreapNode* rp = Merge(x, y->l);
+		y->l = rp;
+    rp->fa = y;
 		y->PushUp();
 
 		return y;
